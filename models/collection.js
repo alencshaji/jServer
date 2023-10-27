@@ -26,6 +26,12 @@ const userSchema = new mongoose.Schema({
     lname: {
         type: String,
     },
+    category:String,
+    state:String,
+    dob:String,
+    gender:String,
+    cod:String,
+    ph:String,
     psw: {
         type: String,
         required: [true, 'Password is required']
@@ -80,6 +86,7 @@ const jobPostSchema = new mongoose.Schema({
     cid:{
         type:String
     },
+    jId:String,
     title: {
         type: String,
         required: [true, 'Job Title is required']
@@ -97,6 +104,11 @@ const jobPostSchema = new mongoose.Schema({
         default: "India",
         required: [true, 'Job Location is required']
     },
+    state:{
+        type: String,
+
+        required: [true, 'State is required']
+    },
     salary: {
         type: String,
         required: [true, 'Salary is required']
@@ -105,12 +117,12 @@ const jobPostSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Job Type is required']
     },
+    expirence:{
+        type:String,
+        required: [true, 'Experience is required']
+    },
     cname: {
         type: String,
-        required: [true, 'Company name is required']
-    },
-    clogo: {
-        type: String
     }
 
 

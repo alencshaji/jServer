@@ -1,4 +1,4 @@
-const { admin, user, company, jobPost} = require("../models/collection")
+const { admin, user, company, jobPost } = require("../models/collection")
 const bcrypt = require('bcrypt');
 
 
@@ -6,13 +6,21 @@ const bcrypt = require('bcrypt');
 
 const adminLogin = (req, res) => {
     const { uname, psw } = req.body
-    admin.findOne({ uname, psw }).then(ad => {
+    admin.findOne({ uname }).then(ad => {
         if (ad) {
-            res.status(200).json({
-                message: "Login succesfully",
-                status: true,
-                statusCode: 200,
-            })
+            if (ad.psw == psw) {
+                res.status(200).json({
+                    message: "Login succesfully",
+                    status: true,
+                    statusCode: 200,
+                })
+            } else {
+                res.status(404).json({
+                    message: "Incorrect Password",
+                    status: false,
+                    statusCode: 404
+                })
+            }
         } else {
             res.status(404).json({
                 message: "Incorrect data",
@@ -27,65 +35,66 @@ const adminLogin = (req, res) => {
 
 //user
 
-const userReg =async (req, res, next) => {
-    const { username, email, psw } = req.body;
-    const hashedpw = await bcrypt.hash(psw,10);
-    console.log(hashedpw);
-    const existingCompany = company.findOne({email})
-    if(existingCompany){
-        return next("Already registered as Company")
-    }else{
-        user.findOne({ email }).then(ur => {
-            if (!username) {
-                return next("name is required")
-            }
-            if (!email) {
-                return next("email is required")
-            }
-            if (!psw) {
-                return next("password is required")
-            }
-            if (ur) {
-                res.status(404).json({
-                    message: "Already a member",
-                    status: false,
-                    statusCode: 404,
-                })
-            } else {
-                const users = user.create({ username, email, psw :hashedpw,fname,lname,location})
-                res.status(201).json({
-                    message: "Registred Succesfully",
-                    status: true,
-                    statusCode: 201,
-                    users,
-                })
-            }
-        })
+const userReg = async (req, res, next) => {
+    const { username, email, psw, fname, lname, location,state,dob,gender,cod,ph,category } = req.body;
+    if (!username || !email || !psw) {
+        return next("All fields are required");
     }
-  
+    const hashedPw = await bcrypt.hash(psw, 10);
+    const existingCompany = await company.findOne({ email });
+    if (existingCompany) {
+        return next("Email already registered as a Company");
+    }
+    const existingUser = await user.findOne({ email });
+    if (existingUser) {
+        return res.status(400).json({
+            message: "Email already registered",
+            status: false,
+            statusCode: 400,
+        });
+    }
+    const newUser = await user.create({
+        username,
+        email,
+        psw: hashedPw,
+        fname,
+        lname,
+        location,
+        state,
+        dob,
+        gender,
+        cod,
+        ph,
+        category
+    });
+    res.status(201).json({
+        message: "Registered Successfully",
+        status: true,
+        statusCode: 201,
+        user: newUser,
+    });
+};
 
 
-}
+
 const userLogin = async (req, res, next) => {
     const { email, psw } = req.body;
-    if (!email) {
-        return next("Please Provide all fields")
-    }
-    if (!psw) {
+    if (!email || !psw) {
         return next("Please Provide all fields")
     }
 
     const ur = await user.findOne({ email });
 
     if (ur) {
-        const decrptPsw = await bcrypt.compare(psw,ur.psw);
+        const decrptPsw = await bcrypt.compare(psw, ur.psw);
         console.log(decrptPsw);
         if (decrptPsw) {
             res.status(200).json({
                 message: "Login successfully",
                 status: true,
                 statusCode: 200,
-                _id: ur._id
+                _id: ur._id,
+                fname:ur.fname
             });
         } else {
             res.status(404).json({
@@ -95,70 +104,60 @@ const userLogin = async (req, res, next) => {
             });
         }
     } else {
-      return next("User not found")
+        return next("User not found")
     }
 
 };
 
 
 //company reg
-const companyReg = async (req,res,next)=>{
-   const {cname,email,psw}=req.body
-    const hashedpw = await bcrypt.hash(psw,10);
-    console.log(hashedpw);
-    const existingUser = await user.findOne({email})
-    if(existingUser){
-       return next("Already registered as user")
-    }else{
-        company.findOne({email}).then(ur => {
-            if (!cname) {
-                return next("Company name is required")
-            }
-            if (!email) {
-                return next("email is required")
-            }
-            if (!psw) {
-                return next("password is required")
-            }
-            if (ur) {
-                res.status(404).json({
-                    message: "Email id already registered",
-                    status: false,
-                    statusCode: 404,
-                })
-            } else {
-                const companies = company.create({ cname, email, psw :hashedpw})
-                res.status(201).json({
-                    message: "Registred Succesfully",
-                    status: true,
-                    statusCode: 201,
-                   companies,
-                })
-            }
-        })
-    } 
-}
+const companyReg = async (req, res, next) => {
+    const { cname, email, psw } = req.body;
+    if (!cname || !email || !psw) {
+        return next("Company name, email, and password are all required");
+    }
+    const hashedPw = await bcrypt.hash(psw, 10);
+    const existingUser = await user.findOne({ email });
+    if (existingUser) {
+        return next("Email already registered as a user");
+    }
+    const existingCompany = await company.findOne({ email });
+    if (existingCompany) {
+        return res.status(400).json({
+            message: "Email already registered",
+            status: false,
+            statusCode: 400,
+        });
+    }
+    const newCompany = await company.create({ cname, email, psw: hashedPw });
+    res.status(201).json({
+        message: "Registered Successfully",
+        status: true,
+        statusCode: 201,
+        company: newCompany,
+    });
+};
+
+
+
 
 //company login
 
-const companyLogin =  async (req, res, next) => {
+const companyLogin = async (req, res, next) => {
     const { email, psw } = req.body;
-    if (!email) {
+    if (!email || !psw) {
         return next("Please Provide all fields")
     }
-    if (!psw) {
-        return next("Please Provide all fields")
-    }
-    const comp = await company.findOne({email})
+    const comp = await company.findOne({ email })
     if (comp) {
-        const decrptPsw = await bcrypt.compare(psw,comp.psw);
-        console.log(decrptPsw);
+        const decrptPsw = await bcrypt.compare(psw, comp.psw);
         if (decrptPsw) {
             res.status(200).json({
                 message: "Login successfully",
                 status: true,
                 statusCode: 200,
-                _id: comp._id
+                _id: comp._id,
+                cname:comp.cname
             });
         } else {
             res.status(404).json({
@@ -168,30 +167,36 @@ const companyLogin =  async (req, res, next) => {
             });
         }
     } else {
-      return next("No data found")
+        return next("Company not found")
     }
 }
 
 //addjob
 
-const addJob = async (req,res,next)=>{
-    const {cid} = req.params
-    const {title,category,role,location,salary,jobtype,cname,clogo}=req.body
-    if(!title){
+const addJob = async (req, res, next) => {
+    const { title, category, role, location,state, salary, jobtype,expirence, cname,cid } = req.body
+    if (!title) {
         return next("Title required")
     }
-    if(!category){
+    if (!category) {
         return next("Category required")
     }
-    if(!role){
+    if (!role) {
         return next("Job role required")
     }
-    if(!salary){
+    if(!state){
+        return next("State required")
+    }
+    if (!salary) {
         return next("Salary required")
     }
-    if(!jobtype){
+    if (!jobtype) {
         return next("Job type required")
     }
+    if (!expirence) {
+        return next("expirencetype required")
+    }
+
     try {
         const jobadd = await jobPost.create({
             title,
@@ -199,10 +204,11 @@ const addJob = async (req,res,next)=>{
             role,
             location,
             salary,
+            state,
             jobtype,
+            expirence,
             cname,
-            clogo,
-            cid
+            cid,
         });
 
         res.status(201).json({
@@ -214,9 +220,22 @@ const addJob = async (req,res,next)=>{
     } catch (error) {
         return next(error);
     }
-   
-    
+
+
+}
+const allJob=(req,res)=>{
+    jobPost.find().then(data=>{
+        if(data){
+            res.status(200).json({
+                message: data,
+                status: true,
+                statusCode: 200
+            })
+        }else{
+            alert("error in loading data")
+        }
+    })
 }
 
 
-module.exports = { adminLogin, userReg, userLogin ,companyReg,companyLogin,addJob}
+module.exports = { adminLogin, userReg, userLogin, companyReg, companyLogin, addJob,allJob }
