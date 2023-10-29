@@ -1,4 +1,4 @@
-const { admin, user, company, jobPost } = require("../models/collection")
+const { admin, user, company, jobPost, userJob } = require("../models/collection")
 const bcrypt = require('bcrypt');
 
 
@@ -36,7 +36,7 @@ const adminLogin = (req, res) => {
 //user
 
 const userReg = async (req, res, next) => {
-    const { username, email, psw, fname, lname, location,state,dob,gender,cod,ph,category } = req.body;
+    const { username, email, psw, fname, lname, location, state, dob, gender, cod, ph, category } = req.body;
     if (!username || !email || !psw) {
         return next("All fields are required");
     }
@@ -94,7 +94,7 @@ const userLogin = async (req, res, next) => {
                 status: true,
                 statusCode: 200,
                 _id: ur._id,
-                fname:ur.fname
+                fname: ur.fname
             });
         } else {
             res.status(404).json({
@@ -157,7 +157,7 @@ const companyLogin = async (req, res, next) => {
                 status: true,
                 statusCode: 200,
                 _id: comp._id,
-                cname:comp.cname
+                cname: comp.cname
             });
         } else {
             res.status(404).json({
@@ -174,7 +174,7 @@ const companyLogin = async (req, res, next) => {
 //addjob
 
 const addJob = async (req, res, next) => {
-    const { title, category, role, location,state, salary, jobtype,expirence, cname,cid } = req.body
+    const { title, category, role, location, state, salary, jobtype, expirence, cname, cid } = req.body
     if (!title) {
         return next("Title required")
     }
@@ -184,7 +184,7 @@ const addJob = async (req, res, next) => {
     if (!role) {
         return next("Job role required")
     }
-    if(!state){
+    if (!state) {
         return next("State required")
     }
     if (!salary) {
@@ -223,19 +223,149 @@ const addJob = async (req, res, next) => {
 
 
 }
-const allJob=(req,res)=>{
-    jobPost.find().then(data=>{
-        if(data){
+const allJob = (req, res) => {
+    jobPost.find().then(data => {
+        if (data) {
             res.status(200).json({
                 message: data,
                 status: true,
                 statusCode: 200
             })
-        }else{
+        } else {
             alert("error in loading data")
         }
     })
 }
+const editJob = (req, res, params) => {
+    const { id } = req.params
+    const { title,
+        category,
+        role,
+        location,
+        salary,
+        state,
+        jobtype,
+        expirence,
+    } = req.body
+    jobPost.findOne({ _id: id }).then(data => {
+        if (data) {
+            data.title = title,
+                data.category = category,
+                data.role = role,
+                data.location = location,
+                data.salary = salary,
+                data.state = state,
+                data.jobtype = jobtype,
+                data.expirence = expirence
 
 
-module.exports = { adminLogin, userReg, userLogin, companyReg, companyLogin, addJob,allJob }
+            data.save()
+            res.status(200).json({
+                message: "Data Updated",
+                status: true,
+                statusCode: 200
+            })
+        }
+    })
+
+}
+const oneJob = (req, res) => {
+    const { id } = req.params
+    jobPost.findOne({ _id: id }).then(data => {
+        if (data) {
+            res.status(200).json({
+                message: data,
+                status: true,
+                statusCode: 200
+            })
+        } else {
+            res.status(404).json({
+                message: "No data",
+                status: false,
+                statusCode: 404
+            })
+        }
+    })
+}
+const deleteJob = (req, res) => {
+    const { id } = req.params
+    jobPost.deleteOne({ _id: id }).then(data => {
+        res.status(200).json({
+            message: "Job deleted",
+            status: true,
+            statusCode: 200
+        })
+    })
+}
+const appliedJob = async (req, res) => {
+    try {
+        const { cid, jid, uid } = req.body;
+        console.log("req,body:", req.body);
+        const udata = await user.findOne({ _id: uid });
+        if (!udata) {
+            return res.status(400).json({
+                message: "Login to Apply",
+                status: false,
+                statusCode: 400,
+            });
+        }
+        const existingJob = await userJob.findOne({ cid, jid, uid });
+        console.log('Query parameters:', { cid, jid, uid });
+        console.log('Existing job:', existingJob);
+
+        if (existingJob) {
+            return res.status(400).json({
+                message: "Already Applied",
+                status: false,
+                statusCode: 400,
+            });
+        }
+        const jobData = await jobPost.findOne({ _id:jid });
+
+        if (jobData) {
+            const newUserJob = await userJob.create({
+                cid,
+                jid,
+                uid,
+                title: jobData.title,
+                uemail: udata.email,
+                location: jobData.location,
+                state: jobData.state,
+                fname: udata.fname,
+                lname: udata.lname,
+                cname: jobData.cname,
+                cod: udata.cod,
+                ph: udata.ph,
+            });
+        
+            return res.status(201).json({
+                message: "Job Applied",
+                status: true,
+                statusCode: 201,
+                userJob: newUserJob,
+            });
+        } else {
+            // Handle the case where jobData is not found in the database
+            return res.status(404).json({
+                message: "Job not found",
+                status: false,
+                statusCode: 404,
+            });
+        }
+        
+
+    } catch (error) {
+        console.log("error", error);
+        return res.status(500).json({
+            message: "Internal Server Error",
+            status: false,
+            statusCode: 500,
+            error: error.message,
+        });
+    }
+};
+
+module.exports = {
+    adminLogin, userReg, userLogin, companyReg,
+    companyLogin, addJob, allJob, editJob, oneJob, deleteJob, appliedJob
+}

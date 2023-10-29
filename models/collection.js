@@ -132,4 +132,22 @@ const jobPostSchema = new mongoose.Schema({
 const jobPost = mongoose.model("jobpost", jobPostSchema)
 
 
-module.exports = { admin, user, company, jobPost }
+//user applied Job
+const userJobSchema = new mongoose.Schema({
+    cid: String,
+    jid:String,
+    uid: String,
+    cname:String,
+    title:String,
+    location:String,
+    state:String,
+    uemail:String,
+    fname:String,
+    lname:String,
+    cod:String,
+    ph:String,
+    
+});
+const userJob = mongoose.model("userJob", userJobSchema);
+
+module.exports = { admin, user, company, jobPost,userJob }
