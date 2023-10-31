@@ -1,4 +1,4 @@
-const { admin, user, company, jobPost, userJob } = require("../models/collection")
+const { admin, user, company, jobPost, userJob, savedJob } = require("../models/collection")
 const bcrypt = require('bcrypt');
 
 
@@ -297,31 +297,26 @@ const deleteJob = (req, res) => {
         })
     })
 }
-const appliedJob = async (req, res) => {
+const applyJob = async (req, res) => {
     try {
         const { cid, jid, uid } = req.body;
-        console.log("req,body:", req.body);
         const udata = await user.findOne({ _id: uid });
         if (!udata) {
-            return res.status(400).json({
+            return res.status(404).json({
                 message: "Login to Apply",
                 status: false,
-                statusCode: 400,
+                statusCode: 404,
             });
         }
         const existingJob = await userJob.findOne({ cid, jid, uid });
-        console.log('Query parameters:', { cid, jid, uid });
-        console.log('Existing job:', existingJob);
-
         if (existingJob) {
-            return res.status(400).json({
+            return res.status(208).json({
                 message: "Already Applied",
                 status: false,
-                statusCode: 400,
+                statusCode: 208,
             });
         }
-        const jobData = await jobPost.findOne({ _id:jid });
-
+        const jobData = await jobPost.findOne({ _id: jid });
         if (jobData) {
             const newUserJob = await userJob.create({
                 cid,
@@ -337,22 +332,21 @@ const appliedJob = async (req, res) => {
                 cod: udata.cod,
                 ph: udata.ph,
             });
-        
+
             return res.status(201).json({
-                message: "Job Applied",
+                message: "Job Applied !!",
                 status: true,
                 statusCode: 201,
                 userJob: newUserJob,
             });
         } else {
-            // Handle the case where jobData is not found in the database
             return res.status(404).json({
                 message: "Job not found",
                 status: false,
                 statusCode: 404,
             });
         }
-        
+
 
     } catch (error) {
         console.log("error", error);
@@ -364,8 +358,122 @@ const appliedJob = async (req, res) => {
         });
     }
 };
-
+const userAppliedJob = (req, res) => {
+    const { uid } = req.params
+    userJob.find({ uid }).then(data => {
+        console.log(data);
+        if (data) {
+            res.status(200).json({
+                message: data,
+                status: true,
+                statusCode: 200,
+            })
+        } else {
+            return res.status(204).json({
+                message: "You haven't applied for any job yet",
+                status: false,
+                statusCode: 204,
+            });
+        }
+    })
+}
+const userSaveJob = async (req, res) => {
+    try {
+        const { uid, jid } = req.params
+        const udata = await user.findOne({ _id: uid });
+        if (!udata) {
+            return res.status(404).json({
+                message: "Login to Apply",
+                status: false,
+                statusCode: 404,
+            });
+        }
+        const existingJob = await savedJob.findOne({ uid, jid });
+        console.log(existingJob);
+        if (existingJob) {
+            return res.status(208).json({
+                message: "Already Saved Job",
+                status: false,
+                statusCode: 208,
+            });
+        }
+        const jobData = await jobPost.findOne({ _id: jid });
+        if (jobData) {
+            const newSaveJobUser = await savedJob.create({
+                uid,
+                jid,
+                title: jobData.title,
+                cname: jobData.cname,
+                location: jobData.location,
+                expirence: jobData.expirence,
+                role:jobData.role,
+            
+               
+            })
+            console.log("userJob:", newSaveJobUser); 
+            return res.status(201).json({
+                message: "Job Saved",
+                status: true,
+                statusCode: 201,
+                userJob: newSaveJobUser,
+                
+            });
+           
+        }
+    }
+    catch (error) {
+        return res.status(500).json({
+            message: "Internal Server Error",
+            status: false,
+            statusCode: 500,
+        });
+    }
+}
+const savedJoblist = (req, res) => {
+    try {
+        const {uid} =req.params
+        savedJob.find({ uid }).then(data=>{
+            if (data) {
+                res.status(200).json({
+                    message: data,
+                    status: true,
+                    statusCode: 200,
+                })
+            } else {
+                return res.status(204).json({
+                    message: "You haven't applied for any job yet",
+                    status: false,
+                    statusCode: 204,
+                }); 
+            }
+        })
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+const deleteSavedJob = (req, res) => {
+    const { id } = req.params
+    savedJob.deleteOne({ _id: id }).then(data => {
+        res.status(200).json({
+            message: "Job deleted",
+            status: true,
+            statusCode: 200,
+        })
+    })
+}
+const deleteSavedAll = (req, res) => {
+    const { id } = req.params
+    savedJob.deleteMany({ uid: id }).then(data => {
+        res.status(200).json({
+            message: "All Saved Jobs deleted",
+            status: true,
+            statusCode: 200,
+        })
+    })
+}
 module.exports = {
     adminLogin, userReg, userLogin, companyReg,
-    companyLogin, addJob, allJob, editJob, oneJob, deleteJob, appliedJob
+    companyLogin, addJob, allJob, editJob, oneJob,
+    deleteJob, applyJob, userAppliedJob, userSaveJob,savedJoblist,deleteSavedJob,deleteSavedAll
 }

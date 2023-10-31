@@ -26,12 +26,12 @@ const userSchema = new mongoose.Schema({
     lname: {
         type: String,
     },
-    category:String,
-    state:String,
-    dob:String,
-    gender:String,
-    cod:String,
-    ph:String,
+    category: String,
+    state: String,
+    dob: String,
+    gender: String,
+    cod: String,
+    ph: String,
     psw: {
         type: String,
         required: [true, 'Password is required']
@@ -83,10 +83,10 @@ const company = mongoose.model("company", compSchema);
 //company-job post
 
 const jobPostSchema = new mongoose.Schema({
-    cid:{
-        type:String
+    cid: {
+        type: String
     },
-    jId:String,
+    jId: String,
     title: {
         type: String,
         required: [true, 'Job Title is required']
@@ -104,7 +104,7 @@ const jobPostSchema = new mongoose.Schema({
         default: "India",
         required: [true, 'Job Location is required']
     },
-    state:{
+    state: {
         type: String,
 
         required: [true, 'State is required']
@@ -117,8 +117,8 @@ const jobPostSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Job Type is required']
     },
-    expirence:{
-        type:String,
+    expirence: {
+        type: String,
         required: [true, 'Experience is required']
     },
     cname: {
@@ -135,19 +135,42 @@ const jobPost = mongoose.model("jobpost", jobPostSchema)
 //user applied Job
 const userJobSchema = new mongoose.Schema({
     cid: String,
-    jid:String,
+    jid: String,
     uid: String,
-    cname:String,
-    title:String,
-    location:String,
-    state:String,
-    uemail:String,
-    fname:String,
-    lname:String,
-    cod:String,
-    ph:String,
-    
-});
+    cname: String,
+    title: String,
+    location: String,
+    state: String,
+    uemail: String,
+    fname: String,
+    lname: String,
+    cod: String,
+    ph: String,
+
+}
+);
 const userJob = mongoose.model("userJob", userJobSchema);
 
-module.exports = { admin, user, company, jobPost,userJob }
+
+//user saved job schema
+
+const userSavedSchema = new mongoose.Schema({
+    cid: String,
+    jid: String,
+    uid: String,
+    cname: String,
+    title: String,
+    location: String,
+    expirence: String,
+    role:String,
+    starClr:{
+        type:Boolean,
+        default:true
+    }
+}) 
+const savedJob = mongoose.model("savedJob", userSavedSchema);
+
+
+
+module.exports = { admin, user, company, jobPost, userJob, savedJob }
+ 
