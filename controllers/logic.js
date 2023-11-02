@@ -94,7 +94,8 @@ const userLogin = async (req, res, next) => {
                 status: true,
                 statusCode: 200,
                 _id: ur._id,
-                fname: ur.fname
+                fname: ur.fname,
+                category:ur.category
             });
         } else {
             res.status(404).json({
@@ -104,10 +105,40 @@ const userLogin = async (req, res, next) => {
             });
         }
     } else {
-        return next("User not found")
+        res.status(404).json({
+            message: "No user Found",
+            status: false,
+            statusCode: 404
+        });
     }
 
 };
+const usersData = (req, res) => {
+    user.find().then(data => {
+        if (data) {
+            res.status(200).json({
+                message: data,
+                status: true,
+                statusCode: 200
+            })
+        } else {
+            alert("error in loading data")
+        }
+    })
+}
+const companyData = (req, res) => {
+    company.find().then(data => {
+        if (data) {
+            res.status(200).json({
+                message: data,
+                status: true,
+                statusCode: 200
+            })
+        } else {
+            alert("error in loading data")
+        }
+    })
+}
 
 
 //company reg
@@ -287,16 +318,86 @@ const oneJob = (req, res) => {
         }
     })
 }
-const deleteJob = (req, res) => {
-    const { id } = req.params
-    jobPost.deleteOne({ _id: id }).then(data => {
-        res.status(200).json({
-            message: "Job deleted",
-            status: true,
-            statusCode: 200
+const deleteCompany = (req, res) => {
+    const { cid } = req.params
+    company.deleteOne({ _id: cid }).then(data => {
+        jobPost.deleteOne({ cid }).then(jdata => {
+            userJob.deleteOne({ cid }).then(cdata => {
+                savedJob.deleteOne({ cid })
+                    .then(adata => {
+                        res.status(200).json({
+                            message: "Company deleted",
+                            status: true,
+                            statusCode: 200
+                        });
+                    })
+                    .catch(error => {
+                        res.status(500).json({
+                            message: "Error deleting Company",
+                            status: false,
+                            statusCode: 500
+                        });
+                    });
+            })
         })
     })
 }
+const deleteUser = (req, res) => {
+    const { uid } = req.params
+    user.deleteOne({_id:uid}).then(data=>{
+        savedJob.deleteOne({uid}).then(adata=>{
+            res.status(200).json({
+                message: "User deleted",
+                status: true,
+                statusCode: 200
+            });
+            
+        })
+        .catch(error => {
+            res.status(500).json({
+                message: "Error deleting User",
+                status: false,
+                statusCode: 500
+            });
+        });
+    })
+
+}
+const deleteJob = (req, res) => {
+    const { id } = req.params;
+    jobPost.deleteOne({ _id: id })
+        .then(data => {
+            savedJob.deleteOne({ jid: id }) // Use the same 'id' variable
+                .then(udata => {
+                    userJob.deleteOne({ jid: id })
+                        .then(adata => {
+                            res.status(200).json({
+                                message: "Job deleted",
+                                status: true,
+                                statusCode: 200
+                            });
+                        })
+
+                })
+                .catch(error => {
+                    res.status(500).json({
+                        message: "Error deleting the job from saved jobs",
+                        status: false,
+                        statusCode: 500
+                    });
+                });
+        })
+        .catch(error => {
+            res.status(500).json({
+                message: "Error deleting the job post",
+                status: false,
+                statusCode: 500
+            });
+        });
+};
+
+//userapplied job data
+
 const applyJob = async (req, res) => {
     try {
         const { cid, jid, uid } = req.body;
@@ -377,6 +478,24 @@ const userAppliedJob = (req, res) => {
         }
     })
 }
+const viewApplicantsJob = (req, res) => {
+    const { cid } = req.params
+    userJob.find({ cid }).then(data => {
+        if (data) {
+            res.status(200).json({
+                message: data,
+                status: true,
+                statusCode: 200,
+            })
+        } else {
+            return res.status(204).json({
+                message: "You haven't applied for any job yet",
+                status: false,
+                statusCode: 204,
+            });
+        }
+    })
+}
 const userSaveJob = async (req, res) => {
     try {
         const { uid, jid } = req.params
@@ -406,19 +525,19 @@ const userSaveJob = async (req, res) => {
                 cname: jobData.cname,
                 location: jobData.location,
                 expirence: jobData.expirence,
-                role:jobData.role,
-            
-               
+                role: jobData.role,
+
+
             })
-            console.log("userJob:", newSaveJobUser); 
+            console.log("userJob:", newSaveJobUser);
             return res.status(201).json({
                 message: "Job Saved",
                 status: true,
                 statusCode: 201,
                 userJob: newSaveJobUser,
-                
+
             });
-           
+
         }
     }
     catch (error) {
@@ -431,8 +550,8 @@ const userSaveJob = async (req, res) => {
 }
 const savedJoblist = (req, res) => {
     try {
-        const {uid} =req.params
-        savedJob.find({ uid }).then(data=>{
+        const { uid } = req.params
+        savedJob.find({ uid }).then(data => {
             if (data) {
                 res.status(200).json({
                     message: data,
@@ -444,7 +563,7 @@ const savedJoblist = (req, res) => {
                     message: "You haven't applied for any job yet",
                     status: false,
                     statusCode: 204,
-                }); 
+                });
             }
         })
     }
@@ -452,6 +571,7 @@ const savedJoblist = (req, res) => {
         console.log(error);
     }
 }
+
 const deleteSavedJob = (req, res) => {
     const { id } = req.params
     savedJob.deleteOne({ _id: id }).then(data => {
@@ -462,6 +582,7 @@ const deleteSavedJob = (req, res) => {
         })
     })
 }
+
 const deleteSavedAll = (req, res) => {
     const { id } = req.params
     savedJob.deleteMany({ uid: id }).then(data => {
@@ -472,8 +593,28 @@ const deleteSavedAll = (req, res) => {
         })
     })
 }
+
+const changeStatus = (req, res) => {
+    const { cid, uid, jid } = req.params
+    const { status } = req.body
+    userJob.findOne({ cid, uid, jid }).then(data => {
+        data.status = status
+        return data.save();
+    }).then(updatedData => {
+        res.status(200).json(updatedData);
+        console.log(updatedData);
+    })
+        .catch(err => {
+            res.status(500).json({ error: 'An error occurred while updating the status.' });
+        });
+}
+
+
+
 module.exports = {
     adminLogin, userReg, userLogin, companyReg,
     companyLogin, addJob, allJob, editJob, oneJob,
-    deleteJob, applyJob, userAppliedJob, userSaveJob,savedJoblist,deleteSavedJob,deleteSavedAll
+    deleteJob, applyJob, userAppliedJob, userSaveJob, savedJoblist,
+    deleteSavedJob, deleteSavedAll, viewApplicantsJob, changeStatus,
+    usersData, companyData, deleteCompany,deleteUser
 }

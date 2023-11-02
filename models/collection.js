@@ -146,6 +146,10 @@ const userJobSchema = new mongoose.Schema({
     lname: String,
     cod: String,
     ph: String,
+    status:{
+        type:String,
+        default:"Applied"
+    }
 
 }
 );
