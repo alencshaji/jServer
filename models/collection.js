@@ -32,6 +32,7 @@ const userSchema = new mongoose.Schema({
     gender: String,
     cod: String,
     ph: String,
+    resume:String,
     psw: {
         type: String,
         required: [true, 'Password is required']
@@ -146,6 +147,7 @@ const userJobSchema = new mongoose.Schema({
     lname: String,
     cod: String,
     ph: String,
+    resume:String,
     status:{
         type:String,
         default:"Applied"

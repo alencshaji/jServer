@@ -1,6 +1,6 @@
 const { admin, user, company, jobPost, userJob, savedJob } = require("../models/collection")
 const bcrypt = require('bcrypt');
-
+const jwt = require('jsonwebtoken')
 
 //adminLogin
 
@@ -36,10 +36,18 @@ const adminLogin = (req, res) => {
 //user
 
 const userReg = async (req, res, next) => {
-    const { username, email, psw, fname, lname, location, state, dob, gender, cod, ph, category } = req.body;
-    if (!username || !email || !psw) {
+    const { username, email, psw, fname, lname, location, state, dob, gender, cod, ph, category} = req.body;
+    const resume = req.file;
+    console.log(resume);
+    if (!username || !email || !psw) { 
         return next("All fields are required");
     }
+    // if (resume && resume.path) {
+    
+    //     console.log(resume.path);
+    // } else {
+    //     console.log("Resume is missing or has no 'path' property");
+    // }
     const hashedPw = await bcrypt.hash(psw, 10);
     const existingCompany = await company.findOne({ email });
     if (existingCompany) {
@@ -65,8 +73,10 @@ const userReg = async (req, res, next) => {
         gender,
         cod,
         ph,
-        category
+        category,
+        resume:resume.path
     });
+    console.log(newUser);
     res.status(201).json({
         message: "Registered Successfully",
         status: true,
@@ -74,9 +84,6 @@ const userReg = async (req, res, next) => {
         user: newUser,
     });
 };
-
-
-
 const userLogin = async (req, res, next) => {
     const { email, psw } = req.body;
     if (!email || !psw) {
@@ -89,13 +96,17 @@ const userLogin = async (req, res, next) => {
         const decrptPsw = await bcrypt.compare(psw, ur.psw);
         console.log(decrptPsw);
         if (decrptPsw) {
+            const token = jwt.sign({ exp: Math.floor(Date.now() / 1000)+60 * 60 * 24 }, 'warrior');
+
+
             res.status(200).json({
                 message: "Login successfully",
                 status: true,
                 statusCode: 200,
                 _id: ur._id,
                 fname: ur.fname,
-                category:ur.category
+                category:ur.category,
+                token
             });
         } else {
             res.status(404).json({
@@ -432,6 +443,7 @@ const applyJob = async (req, res) => {
                 cname: jobData.cname,
                 cod: udata.cod,
                 ph: udata.ph,
+                resume:udata.resume
             });
 
             return res.status(201).json({
