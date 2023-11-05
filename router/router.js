@@ -11,25 +11,7 @@ const fs = require('fs');
 
 
 
-// router.get('/:filename', (req, res) => {
-//   const { filename } = req.params;
-//   const directoryPath = path.join(__dirname, '..', 'resumes');
-//   console.log(__dirname);
-//   fs.access(directoryPath, fs.constants.R_OK, (dirErr) => {
-//     if (dirErr) {
-//       console.error(`Directory access error: ${dirErr}`);
-//       res.status(404).send('Directory not accessible');
-//     } else {
-//       const filePath = path.join(directoryPath, filename);
-//       if (fs.existsSync(filePath)) {
-//         res.sendFile(filePath);
-//       } else {
-//         console.error(`File not found: ${filePath}`);
-//         res.status(404).send('File not found');
-//       }
-//     }
-//   });
-// });
+
 
 
 

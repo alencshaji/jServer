@@ -32,7 +32,7 @@ const userSchema = new mongoose.Schema({
     gender: String,
     cod: String,
     ph: String,
-    resume:String,
+    resume: String,
     psw: {
         type: String,
         required: [true, 'Password is required']
@@ -75,6 +75,10 @@ const compSchema = new mongoose.Schema({
     psw: {
         type: String,
         required: [true, 'Password is required'],
+    },
+    logo:{
+        type:String,
+        required:[true,'Company Logo is required']
     }
 },
     { timestamps: true }
@@ -124,7 +128,8 @@ const jobPostSchema = new mongoose.Schema({
     },
     cname: {
         type: String,
-    }
+    },
+    logo:String
 
 
 },
@@ -146,14 +151,15 @@ const userJobSchema = new mongoose.Schema({
     fname: String,
     lname: String,
     cod: String,
-    ph: String,
-    resume:String,
-    status:{
-        type:String,
-        default:"Applied"
+    ph: String, 
+    resume: String, 
+    status: {
+        type: String,
+        default: "Applied"
     }
 
-}
+},
+    { timestamps: true }
 );
 const userJob = mongoose.model("userJob", userJobSchema);
 
@@ -168,15 +174,14 @@ const userSavedSchema = new mongoose.Schema({
     title: String,
     location: String,
     expirence: String,
-    role:String,
-    starClr:{
-        type:Boolean,
-        default:true
+    role: String,
+    starClr: {
+        type: Boolean,
+        default: true
     }
-}) 
+})
 const savedJob = mongoose.model("savedJob", userSavedSchema);
 
 
 
 module.exports = { admin, user, company, jobPost, userJob, savedJob }
- 

@@ -2,12 +2,12 @@ const multer = require('multer');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, 'resumes/'); // Destination directory for uploaded files
+      cb(null, 'resumes'); // Destination directory for uploaded files
     },
     filename: function (req, file, cb) {
       cb(null, Date.now() + '-' + file.originalname); // File naming strategy
     },
-});
+}); 
 
 
 const upload = multer({ storage: storage,limits: { fileSize: 5000000 ,files:1},});

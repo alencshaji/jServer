@@ -42,12 +42,6 @@ const userReg = async (req, res, next) => {
     if (!username || !email || !psw) { 
         return next("All fields are required");
     }
-    // if (resume && resume.path) {
-    
-    //     console.log(resume.path);
-    // } else {
-    //     console.log("Resume is missing or has no 'path' property");
-    // }
     const hashedPw = await bcrypt.hash(psw, 10);
     const existingCompany = await company.findOne({ email });
     if (existingCompany) {
@@ -154,8 +148,8 @@ const companyData = (req, res) => {
 
 //company reg
 const companyReg = async (req, res, next) => {
-    const { cname, email, psw } = req.body;
-    if (!cname || !email || !psw) {
+    const { cname, email, psw,logo } = req.body;
+    if (!cname || !email || !psw || !logo) {
         return next("Company name, email, and password are all required");
     }
     const hashedPw = await bcrypt.hash(psw, 10);
@@ -171,7 +165,7 @@ const companyReg = async (req, res, next) => {
             statusCode: 400,
         });
     }
-    const newCompany = await company.create({ cname, email, psw: hashedPw });
+    const newCompany = await company.create({ cname, email, psw: hashedPw ,logo});
     res.status(201).json({
         message: "Registered Successfully",
         status: true,
@@ -209,14 +203,18 @@ const companyLogin = async (req, res, next) => {
             });
         }
     } else {
-        return next("Company not found")
+        res.status(404).json({
+            message: "No company found",
+            status: false,
+            statusCode: 404
+        })
     }
 }
 
 //addjob
 
 const addJob = async (req, res, next) => {
-    const { title, category, role, location, state, salary, jobtype, expirence, cname, cid } = req.body
+    const { title, category, role, location, state, salary, jobtype, expirence, cname, cid ,logo} = req.body
     if (!title) {
         return next("Title required")
     }
@@ -238,30 +236,34 @@ const addJob = async (req, res, next) => {
     if (!expirence) {
         return next("expirencetype required")
     }
-
-    try {
-        const jobadd = await jobPost.create({
-            title,
-            category,
-            role,
-            location,
-            salary,
-            state,
-            jobtype,
-            expirence,
-            cname,
-            cid,
-        });
-
-        res.status(201).json({
-            message: "Job Posted",
-            status: true,
-            statusCode: 201,
-            jobadd,
-        });
-    } catch (error) {
-        return next(error);
+    if(cid){
+        const Data = await company.findOne({ _id: cid });
+        try {
+            const jobadd = await jobPost.create({
+                title,
+                category,
+                role,
+                location,
+                salary,
+                state,
+                jobtype,
+                expirence,
+                cname,
+                cid,
+                logo:Data.logo
+            });
+    
+            res.status(201).json({
+                message: "Job Posted",
+                status: true,
+                statusCode: 201,
+                jobadd,
+            });
+        } catch (error) {
+            return next(error);
+        }
     }
+    
 
 
 }
@@ -329,34 +331,36 @@ const oneJob = (req, res) => {
         }
     })
 }
-const deleteCompany = (req, res) => {
-    const { cid } = req.params
-    company.deleteOne({ _id: cid }).then(data => {
-        jobPost.deleteOne({ cid }).then(jdata => {
-            userJob.deleteOne({ cid }).then(cdata => {
-                savedJob.deleteOne({ cid })
-                    .then(adata => {
-                        res.status(200).json({
-                            message: "Company deleted",
-                            status: true,
-                            statusCode: 200
-                        });
-                    })
-                    .catch(error => {
-                        res.status(500).json({
-                            message: "Error deleting Company",
-                            status: false,
-                            statusCode: 500
-                        });
-                    });
-            })
-        })
-    })
-}
+const deleteCompany = async (req, res) => {
+    try {
+        const { cid } = req.params;
+        // Delete the company document
+        await company.deleteOne({ _id: cid });
+        // Delete related documents using Promise.all
+        await Promise.all([
+            jobPost.deleteMany({ cid }),
+            userJob.deleteMany({ cid }),
+            savedJob.deleteMany({ cid }),
+        ]);
+
+        res.status(200).json({
+            message: "Company and associated data deleted",
+            status: true,
+            statusCode: 200,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Error deleting Company and associated data",
+            status: false,
+            statusCode: 500,
+        });
+    }
+};
+
 const deleteUser = (req, res) => {
     const { uid } = req.params
     user.deleteOne({_id:uid}).then(data=>{
-        savedJob.deleteOne({uid}).then(adata=>{
+        savedJob.deleteMany({uid}).then(adata=>{
             res.status(200).json({
                 message: "User deleted",
                 status: true,
@@ -444,7 +448,9 @@ const applyJob = async (req, res) => {
                 cod: udata.cod,
                 ph: udata.ph,
                 resume:udata.resume
-            });
+            },
+            {timestamps:true}
+            );
 
             return res.status(201).json({
                 message: "Job Applied !!",
