@@ -68,7 +68,7 @@ const userReg = async (req, res, next) => {
         cod,
         ph,
         category,
-        resume:resume.path
+        resume:resume.filename
     });
     console.log(newUser);
     res.status(201).json({

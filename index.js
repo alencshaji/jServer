@@ -11,7 +11,7 @@ server.use(cors())
 server.use(express.json())
 server.use(router)
 const m = path.join(__dirname,'resumes')
-server.use(express.static(path.join(__dirname,'resumes')))
+server.use(express.static('resumes'))
 console.log(m);
 server.use(errorMiddleware)
 require('./database/connection')
