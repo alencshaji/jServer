@@ -45,6 +45,6 @@ const errorMulter = (error, req, res, next) => {
       message: 'Only PDF files are allowed',
     });
   }
-};
+}; 
 
 module.exports = upload;
